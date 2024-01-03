@@ -111,20 +111,28 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
+    glm::vec2 screenMousePos = glm::vec2(xpos, ypos);
 
-    ypos = WINDOW_HEIGHT - ypos;
+    screenMousePos.y = WINDOW_HEIGHT - screenMousePos.y;
 
-    xpos /= WINDOW_WIDTH;
-    ypos /= WINDOW_HEIGHT;
-
-    zoomLevel = fmax(zoomLevel + yoffset, 1);
-
+    screenMousePos.x /= WINDOW_WIDTH;
+    screenMousePos.y /= WINDOW_HEIGHT;
+    
     glm::vec2 lb = zoomCenter - glm::vec2((0.5 / zoomLevel));
     glm::vec2 rt = zoomCenter + glm::vec2((0.5 / zoomLevel));
 
-    zoomCenter = glm::mix(lb, rt, glm::vec2(xpos,ypos));
+    glm::vec2 absoluteMousePosBeforeZoom = mix(lb, rt, screenMousePos);
 
-    std::cout << "xpos: " << xpos << ", ypos: " << ypos << std::endl;
+    zoomLevel = fmax(zoomLevel + yoffset, 1);
+
+    lb = zoomCenter - glm::vec2((0.5 / zoomLevel));
+    rt = zoomCenter + glm::vec2((0.5 / zoomLevel));
+
+    glm::vec2 newAbsoluteMousePos = mix(lb, rt, screenMousePos);
+
+    zoomCenter += (absoluteMousePosBeforeZoom - newAbsoluteMousePos);
+
+    std::cout << "zoomCenterX: " << zoomCenter.x << ", zoomCenterY: " << zoomCenter.y << std::endl;
     std::cout << "zoomLevel: " << zoomLevel << std::endl;
 }
 
