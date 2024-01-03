@@ -39,6 +39,12 @@ GLubyte solidcolor[16*16] = {
 };
 GLubyte grid[GRID_WIDTH * GRID_HEIGHT] = { 0 };
 
+glm::vec2 cursorPosition;
+glm::vec2 cursorDelta;
+
+float zoomFactor = 1.2;
+bool lmbPressed;
+
 unsigned int gridDataTextures[2];
 unsigned int gridFBO;
 
@@ -56,7 +62,7 @@ unsigned int indices[] = {
 };
 
 float zoomLevel = 1.0f; 
-glm::vec2 zoomCenter = glm::vec2(0.5f, 0.5f);
+glm::vec2 cameraCenter = glm::vec2(0.5f, 0.5f);
 
 void initializeGrid(GLubyte defaultValue = 0)
 {
@@ -98,7 +104,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window)
+void processKeyboardInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
@@ -106,33 +112,62 @@ void processInput(GLFWwindow* window)
     }
 }
 
+
+glm::vec2 getLeftBottomAbsolutePos()
+{
+    return cameraCenter - glm::vec2((0.5 / zoomLevel));
+}
+
+glm::vec2 getRightTopAbsolutePos()
+{
+    return cameraCenter + glm::vec2((0.5 / zoomLevel));
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+    {
+        lmbPressed = true;
+    }
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+    {
+        lmbPressed = false;
+    }
+}
+
+static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    cursorPosition = glm::vec2(xpos, ypos);
+
+    if (lmbPressed) 
+    {
+        glm::vec2 screenCursorPos = cursorDelta;
+
+        screenCursorPos.x = -(screenCursorPos.x / (WINDOW_WIDTH * zoomLevel));
+        screenCursorPos.y = screenCursorPos.y / (WINDOW_HEIGHT * zoomLevel);
+
+        cameraCenter += screenCursorPos;
+    }
+}
+
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
 
-    glm::vec2 screenMousePos = glm::vec2(xpos, ypos);
+    glm::vec2 screenCursorPos = cursorPosition;
 
-    screenMousePos.y = WINDOW_HEIGHT - screenMousePos.y;
+    screenCursorPos.y = WINDOW_HEIGHT - screenCursorPos.y;
 
-    screenMousePos.x /= WINDOW_WIDTH;
-    screenMousePos.y /= WINDOW_HEIGHT;
+    screenCursorPos.x /= WINDOW_WIDTH;
+    screenCursorPos.y /= WINDOW_HEIGHT;
     
-    glm::vec2 lb = zoomCenter - glm::vec2((0.5 / zoomLevel));
-    glm::vec2 rt = zoomCenter + glm::vec2((0.5 / zoomLevel));
+    glm::vec2 absoluteCursorPosBeforeZoom = mix(getLeftBottomAbsolutePos(), getRightTopAbsolutePos(), screenCursorPos);
 
-    glm::vec2 absoluteMousePosBeforeZoom = mix(lb, rt, screenMousePos);
+    zoomLevel = fmax(zoomLevel * (yoffset > 0 ? zoomFactor : 1 / zoomFactor), 1);
 
-    zoomLevel = fmax(zoomLevel + yoffset, 1);
+    glm::vec2 newAbsoluteCursorPos = mix(getLeftBottomAbsolutePos(), getRightTopAbsolutePos(), screenCursorPos);
 
-    lb = zoomCenter - glm::vec2((0.5 / zoomLevel));
-    rt = zoomCenter + glm::vec2((0.5 / zoomLevel));
+    cameraCenter += (absoluteCursorPosBeforeZoom - newAbsoluteCursorPos);
 
-    glm::vec2 newAbsoluteMousePos = mix(lb, rt, screenMousePos);
-
-    zoomCenter += (absoluteMousePosBeforeZoom - newAbsoluteMousePos);
-
-    std::cout << "zoomCenterX: " << zoomCenter.x << ", zoomCenterY: " << zoomCenter.y << std::endl;
     std::cout << "zoomLevel: " << zoomLevel << std::endl;
 }
 
@@ -158,8 +193,11 @@ int initWindow()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -263,7 +301,7 @@ void displayGameGrid(unsigned int outputTexture, int fullscreenVAO, Shader& disp
     glBindVertexArray(fullscreenVAO);
     displayShader.use();
     displayShader.setFloat("zoomLevel", zoomLevel);
-    displayShader.setVec2("zoomCenter", zoomCenter.x, zoomCenter.y);
+    displayShader.setVec2("cameraCenter", cameraCenter.x, cameraCenter.y);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, outputTexture);
@@ -304,7 +342,7 @@ int main()
     bool flip = false;
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        processKeyboardInput(window);
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -318,8 +356,13 @@ int main()
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << std::endl;
         }
-        
+
+        glm::vec2 oldCursorPos = cursorPosition;
         glfwPollEvents();
+        glm::vec2 newCursorPos = cursorPosition;
+
+        cursorDelta = newCursorPos - oldCursorPos;
+
         glfwSwapBuffers(window);
         flip = !flip;
     }
