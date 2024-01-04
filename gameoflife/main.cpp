@@ -4,49 +4,22 @@
 #include <iostream>
 #include "Shader.h"
 #include "main.h"
+#include "game.h"
 
 GLFWwindow* window;
 
 int WINDOW_WIDTH = 1000;
 int WINDOW_HEIGHT = 1000;
 
-const int GRID_WIDTH = 200;
-const int GRID_HEIGHT = 200;
+float zoomFactor = 1.2;
+float zoomLevel = 20.0f;
 
-GLubyte glider[] = {
-    0, 255, 0,
-    0, 0, 255,
-    255, 255, 255
-};
-
-GLubyte solidcolor[16*16] = {
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-};
-GLubyte grid[GRID_WIDTH * GRID_HEIGHT] = { 0 };
 
 glm::vec2 cursorPosition;
 glm::vec2 cursorDelta;
 
-float zoomFactor = 1.2;
 bool lmbPressed;
 
-unsigned int gridDataTextures[2];
-unsigned int gridFBO;
 
 float vertices[] = {
     // positions //tex
@@ -61,41 +34,7 @@ unsigned int indices[] = {
     2, 1, 3
 };
 
-float zoomLevel = 1.0f; 
 glm::vec2 cameraCenter = glm::vec2(0.5f, 0.5f);
-
-void initializeGrid(GLubyte defaultValue = 0)
-{
-    for (int i = 0; i < GRID_WIDTH * GRID_HEIGHT; ++i)
-    {
-        grid[i] = defaultValue;
-    }
-}
-
-void addPattern(const GLubyte* pattern, int patternWidth, int patternHeight,
-    int startX, int startY)
-{
-    for (int y = 0; y < patternHeight; y++)
-    {
-        for (int x = 0; x < patternWidth; x++)
-        {
-            if ((startX + x) < GRID_WIDTH && (startY + y) < GRID_HEIGHT)
-            {
-                grid[(startY + y) * GRID_WIDTH + (startX + x)] = pattern[y * patternWidth + x];
-            }
-        }
-    }
-}
-
-void setGridCoord(int x, int y, bool value)
-{
-    grid[y * GRID_WIDTH + x] = value;
-}
-
-bool getGridCoord(int x, int y)
-{
-    return grid[y * GRID_WIDTH + x];
-}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -167,8 +106,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     glm::vec2 newAbsoluteCursorPos = mix(getLeftBottomAbsolutePos(), getRightTopAbsolutePos(), screenCursorPos);
 
     cameraCenter += (absoluteCursorPosBeforeZoom - newAbsoluteCursorPos);
-
-    std::cout << "zoomLevel: " << zoomLevel << std::endl;
 }
 
 int initWindow()
@@ -233,125 +170,27 @@ int getFullscreenRectVAO()
 
     return screenVAO;
 }
-
-void setupTexture(unsigned int texture)
-{
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    float borderColor[4] = { 1, 1, 1, 1 };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8_SNORM, GRID_WIDTH, GRID_HEIGHT, 0, GL_RED, GL_UNSIGNED_BYTE, grid);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void initGridDataTexture()
-{
-    glGenTextures(2, gridDataTextures);
-    setupTexture(gridDataTextures[0]);
-    setupTexture(gridDataTextures[1]);
-}
-
-unsigned int getGridFramebuffer(unsigned int texture)
-{
-    unsigned int FBO;
-    glGenFramebuffers(1, &FBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
-    glFinish();
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    return FBO;
-}
-
-
-void calculateNextGameState(unsigned int outputTexture, unsigned int inputTexture, int fullscreenVAO, Shader& computationShader)
-{
-
-    glBindFramebuffer(GL_FRAMEBUFFER, gridFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, outputTexture, 0);
-    glViewport(0, 0, GRID_WIDTH, GRID_HEIGHT);
-
-    glBindVertexArray(fullscreenVAO);
-    computationShader.use();
-    computationShader.setInt("GRID_HEIGHT", GRID_HEIGHT);
-    computationShader.setInt("GRID_WIDTH", GRID_WIDTH);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, inputTexture);
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindVertexArray(0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-}
-
-void displayGameGrid(unsigned int outputTexture, int fullscreenVAO, Shader& displayShader)
-{
-    glBindVertexArray(fullscreenVAO);
-    displayShader.use();
-    displayShader.setFloat("zoomLevel", zoomLevel);
-    displayShader.setVec2("cameraCenter", cameraCenter.x, cameraCenter.y);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, outputTexture);
-
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-}
-
 int main()
 {
-    initializeGrid(0);
-    addPattern(glider, 3, 3, 0, 0);
-    addPattern(glider, 3, 3, 10, 0);
-    addPattern(glider, 3, 3, 20, 0);
-    addPattern(glider, 3, 3, 30, 0);
-    addPattern(glider, 3, 3, 40, 0);
-    addPattern(glider, 3, 3, 50, 0);
-    addPattern(glider, 3, 3, 60, 0);
-    addPattern(glider, 3, 3, 70, 0);
-    addPattern(glider, 3, 3, 80, 0);
-    addPattern(glider, 3, 3, 90, 0);
-    addPattern(solidcolor, 16, 16, 100, 100);
-    addPattern(solidcolor, 16, 16, 116, 100);
+
     int success = initWindow();
     if (success == -1)
     {
         return -1;
     }
 
+    Game game = Game(2000, 2000);
     int fullscreenVAO = getFullscreenRectVAO();
-
-    Shader computationShader = Shader("./computation_shader.vert", "./computation_shader.frag");
-    Shader displayShader = Shader("./screen.vert", "./screen.frag");
-
-    initGridDataTexture();
-    gridFBO = getGridFramebuffer(gridDataTextures[0]);
 
     bool flip = false;
     while (!glfwWindowShouldClose(window))
     {
         processKeyboardInput(window);
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(1, 0, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        unsigned int outputTexture = gridDataTextures[flip ? 0 : 1];
-        unsigned int inputTexture = gridDataTextures[flip ? 1 : 0];
+        game.iterateGame(zoomLevel, cameraCenter, fullscreenVAO);
 
-        calculateNextGameState(outputTexture, inputTexture, fullscreenVAO, computationShader);
-        displayGameGrid(outputTexture, fullscreenVAO, displayShader);
-        
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {
             std::cerr << "OpenGL error: " << err << std::endl;
@@ -364,7 +203,6 @@ int main()
         cursorDelta = newCursorPos - oldCursorPos;
 
         glfwSwapBuffers(window);
-        flip = !flip;
     }
 
     glfwTerminate();
