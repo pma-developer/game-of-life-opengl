@@ -67,7 +67,7 @@ public:
         initGridDataTexture();
         computationShader = Shader("./computation_shader.vert", "./computation_shader.frag");
         displayShader = Shader("./screen.vert", "./screen.frag");
-        gridFBO = getGridFramebuffer(gridDataTextures[1]);
+        gridFBO = getGridFramebuffer(gridDataTextures[0]);
 	}
 
     ~Game()
@@ -163,7 +163,7 @@ public:
         glViewport(0, 0, size[2], size[3]);
     }
 
-    void displayGameGrid(int zoomLevel, glm::vec2 cameraCenter, unsigned int outputTexture, int fullscreenVAO)
+    void displayGameGrid(float zoomLevel, glm::vec2 cameraCenter, unsigned int outputTexture, int fullscreenVAO)
     {
         glBindVertexArray(fullscreenVAO);
         displayShader.use();

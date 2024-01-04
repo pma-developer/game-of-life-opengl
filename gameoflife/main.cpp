@@ -12,7 +12,7 @@ int WINDOW_WIDTH = 1000;
 int WINDOW_HEIGHT = 1000;
 
 float zoomFactor = 1.2;
-float zoomLevel = 20.0f;
+float zoomLevel = 1.0f;
 
 
 glm::vec2 cursorPosition;
