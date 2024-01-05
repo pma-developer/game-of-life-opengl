@@ -2,6 +2,7 @@
 #include <glm/glm/glm.hpp>
 #include <iostream>
 #include "Shader.h"
+#include "LifePattern.h"
 
 const static GLubyte glider[] = {
     0, 255, 0,
@@ -51,28 +52,20 @@ public:
         grid = new GLubyte[gridWidth * gridHeight];
 
         initializeGrid(0);
-        addPattern(glider, 3, 3, 0, 0);
-        addPattern(glider, 3, 3, 10, 0);
-        addPattern(glider, 3, 3, 20, 0);
-        addPattern(glider, 3, 3, 30, 0);
-        addPattern(glider, 3, 3, 40, 0);
-        addPattern(glider, 3, 3, 50, 0);
-        addPattern(glider, 3, 3, 60, 0);
-        addPattern(glider, 3, 3, 70, 0);
-        addPattern(glider, 3, 3, 80, 0);
-        addPattern(glider, 3, 3, 90, 0);
-        addPattern(solidcolor, 16, 16, 100, 100);
-        addPattern(solidcolor, 16, 16, 116, 100);
 
-        initGridDataTexture();
-        computationShader = Shader("./computation_shader.vert", "./computation_shader.frag");
-        displayShader = Shader("./screen.vert", "./screen.frag");
-        gridFBO = getGridFramebuffer(gridDataTextures[0]);
 	}
 
     ~Game()
     {
         delete[] grid;
+    }
+
+    void finishConfiguration()
+    {
+        initGridDataTexture();
+        computationShader = Shader("./computation_shader.vert", "./computation_shader.frag");
+        displayShader = Shader("./screen.vert", "./screen.frag");
+        gridFBO = getGridFramebuffer(gridDataTextures[0]);
     }
 
     void initializeGrid(GLubyte defaultValue = 0)
@@ -83,16 +76,30 @@ public:
         }
     }
 
+    void addPattern(LifePattern lifePattern,
+        int posX, int posY)
+    {
+        for (int y = 0; y < lifePattern.height; y++)
+        {
+            for (int x = 0; x < lifePattern.width; x++)
+            {
+                if ((posX + x) < gridWidth && (posY + y) < gridHeight)
+                {
+                    grid[(posY + y) * gridWidth + (posX + x)] = lifePattern.body[y * lifePattern.width + x];
+                }
+            }
+        }
+    }
     void addPattern(const GLubyte* pattern, int patternWidth, int patternHeight,
-        int startX, int startY)
+        int posX, int posY)
     {
         for (int y = 0; y < patternHeight; y++)
         {
             for (int x = 0; x < patternWidth; x++)
             {
-                if ((startX + x) < gridWidth && (startY + y) < gridHeight)
+                if ((posX + x) < gridWidth && (posY + y) < gridHeight)
                 {
-                    grid[(startY + y) * gridWidth + (startX + x)] = pattern[y * patternWidth + x];
+                    grid[(posY + y) * gridWidth + (posX + x)] = pattern[y * patternWidth + x];
                 }
             }
         }

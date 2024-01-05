@@ -134,12 +134,16 @@
   <ItemGroup>
     <ClCompile Include="game.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="LifePattern.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="rleImporter.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.h" />
+    <ClInclude Include="LifePattern.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="RleImporter.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>
   <ItemGroup>
