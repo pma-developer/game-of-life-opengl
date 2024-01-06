@@ -71,7 +71,7 @@ private:
     const LifePattern getLifePatternFromRleData(const size_t lifePatternWidth, const size_t lifePatternHeight, std::string lifePatternCellStates)
     {
 
-        char* body = new char[lifePatternWidth * lifePatternHeight];
+        std::unique_ptr<char[]> body(new char[lifePatternWidth * lifePatternHeight]);
 
         int currentTagNumber = -1;
         size_t curOutputLineIndex = 0;
@@ -82,7 +82,7 @@ private:
 
             if (curOutputLineIndex > lifePatternHeight - 1) {
                 std::cout << "invalid RLE string, exceeded line height" << std::endl;
-                return LifePattern(lifePatternWidth, lifePatternHeight, body);
+                return LifePattern(lifePatternWidth, lifePatternHeight, std::move(body));
             }
 
             if (std::isdigit(curChar)) {
@@ -92,7 +92,7 @@ private:
                 currentTagNumber = currentTagNumber == -1 ? 1 : currentTagNumber;
 
                 if (curChar == '!') {
-                    return LifePattern(lifePatternWidth, lifePatternHeight, body);
+                    return LifePattern(lifePatternWidth, lifePatternHeight, std::move(body));
                 }
                 else if (curChar == '$') {
                     curOutputLineIndex += currentTagNumber;
@@ -102,24 +102,25 @@ private:
                     curOutputCharIndex += currentTagNumber;
                     if (curOutputCharIndex > lifePatternWidth - 1) {
                         std::cout << "invalid RLE string, exceeded line width on \'b\' write" << std::endl;
-                        return LifePattern(lifePatternWidth, lifePatternHeight, body);
+                        return LifePattern(lifePatternWidth, lifePatternHeight, std::move(body));
                     }
                 }
                 else if (curChar == 'o') {
                     if (curOutputCharIndex + currentTagNumber - 1 > lifePatternWidth - 1) {
                         std::cout << "invalid RLE string, exceeded line width on \'o\' write" << std::endl;
-                        return LifePattern(lifePatternWidth, lifePatternHeight, body);
+                        return LifePattern(lifePatternWidth, lifePatternHeight, std::move(body));
                     }
 
                     for (size_t j = 0; j < currentTagNumber; j++) {
-                        body[curOutputCharIndex + j + (curOutputLineIndex * lifePatternWidth)] = 255;
+                        std::move(body)[curOutputCharIndex + j + (curOutputLineIndex * lifePatternWidth)] = 255;
                     }
                     curOutputCharIndex += currentTagNumber;
                 }
                 currentTagNumber = -1;
             }
         }
-        return LifePattern(lifePatternWidth, lifePatternHeight, body);
+
+        return LifePattern(lifePatternWidth, lifePatternHeight, std::move(body));
     }
 
     bool getDataFromRle(std::string rleString, size_t& lifePatternWidth, size_t& lifePatternHeight, std::string& lifePatternRuleString, std::string& lifePatternCellStates)
