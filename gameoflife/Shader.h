@@ -3,6 +3,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <functional>
 
 #pragma once
 class Shader
@@ -28,14 +29,19 @@ public:
 	{
 		std::string vSource;
 		std::string fSource;
+		getShaderSourcesFromPaths(vSource, fSource, vShaderPath, fShaderPath);
+		return getShaderProgramFromSources(vSource, fSource);
+	}
 
+	void getShaderSourcesFromPaths(std::string& vShaderSource, std::string& fShaderSource, std::string vShaderPath, std::string fShaderPath)
+	{
 		std::ifstream vShaderStream;
 		std::ifstream fShaderStream;
 
 		vShaderStream.exceptions(std::ifstream::badbit | std::ifstream::failbit);
 		fShaderStream.exceptions(std::ifstream::badbit | std::ifstream::failbit);
 
-		try 
+		try
 		{
 			vShaderStream.open(vShaderPath);
 			fShaderStream.open(fShaderPath);
@@ -49,19 +55,23 @@ public:
 			vShaderStream.close();
 			fShaderStream.close();
 
-			vSource = vShaderStringStream.str();
-			fSource = fShaderStringStream.str();
+			vShaderSource = vShaderStringStream.str();
+			fShaderSource = fShaderStringStream.str();
 		}
 		catch (std::ifstream::failure& e)
 		{
 			std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << e.what() << std::endl;
 		}
 
+	}
+
+	unsigned int getShaderProgramFromSources(std::string vShaderSource, std::string fShaderSource)
+	{
+		const char* vSourceCstr = vShaderSource.c_str();
+		const char* fSourceCstr = fShaderSource.c_str();
+
 		unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 		unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-		const char* vSourceCstr = vSource.c_str();
-		const char* fSourceCstr = fSource.c_str();
 
 		glShaderSource(vertexShader, 1, &vSourceCstr, NULL);
 		glShaderSource(fragmentShader, 1, &fSourceCstr, NULL);
