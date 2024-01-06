@@ -13,7 +13,7 @@ GLFWwindow* window;
 int WINDOW_WIDTH = 1000;
 int WINDOW_HEIGHT = 1000;
 
-float zoomFactor = 1.2;
+float zoomFactor = 1.2f;
 float zoomLevel = 1.0f;
 
 
@@ -56,12 +56,12 @@ void processKeyboardInput(GLFWwindow* window)
 
 glm::vec2 getLeftBottomAbsolutePos()
 {
-    return cameraCenter - glm::vec2((0.5 / zoomLevel));
+    return cameraCenter - glm::vec2((0.5f / zoomLevel));
 }
 
 glm::vec2 getRightTopAbsolutePos()
 {
-    return cameraCenter + glm::vec2((0.5 / zoomLevel));
+    return cameraCenter + glm::vec2((0.5f / zoomLevel));
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -103,7 +103,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     
     glm::vec2 absoluteCursorPosBeforeZoom = mix(getLeftBottomAbsolutePos(), getRightTopAbsolutePos(), screenCursorPos);
 
-    zoomLevel = fmax(zoomLevel * (yoffset > 0 ? zoomFactor : 1 / zoomFactor), 1);
+    zoomLevel = fmax(zoomLevel * (yoffset > 0.0f ? zoomFactor : 1.0f / zoomFactor), 1.0f);
 
     glm::vec2 newAbsoluteCursorPos = mix(getLeftBottomAbsolutePos(), getRightTopAbsolutePos(), screenCursorPos);
 
@@ -172,6 +172,7 @@ int getFullscreenRectVAO()
 
     return screenVAO;
 }
+
 int main()
 {
 

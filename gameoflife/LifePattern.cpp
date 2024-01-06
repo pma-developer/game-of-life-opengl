@@ -1,6 +1,6 @@
 #include "LifePattern.h"
 
-LifePattern::LifePattern(unsigned int width, unsigned int height, std::unique_ptr<char[]> body) :width(width), height(height)
+LifePattern::LifePattern(size_t width, size_t height, std::unique_ptr<char[]> body) :width(width), height(height)
 {
 	this->body = std::move(body);
 }

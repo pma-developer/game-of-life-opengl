@@ -44,6 +44,8 @@ public:
 
             return result;
         }
+
+        throw std::runtime_error("curl was not initialized properly");
     }
 
 private:
@@ -112,7 +114,7 @@ private:
                     }
 
                     for (size_t j = 0; j < currentTagNumber; j++) {
-                        std::move(body)[curOutputCharIndex + j + (curOutputLineIndex * lifePatternWidth)] = 255;
+                        body[curOutputCharIndex + j + (curOutputLineIndex * lifePatternWidth)] = (char)255;
                     }
                     curOutputCharIndex += currentTagNumber;
                 }

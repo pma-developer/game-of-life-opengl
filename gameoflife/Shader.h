@@ -118,7 +118,7 @@ public:
 		glUniform2f(glGetUniformLocation(programID, name.c_str()), v0, v1);
 	}
 
-	void setBoolArray(const std::string& name, size_t size, bool* value) const
+	void setBoolArray(const std::string& name, GLsizei size, bool* value) const
 	{
 		glUniform1iv(glGetUniformLocation(programID, name.c_str()), size, (int*)value);
 	}

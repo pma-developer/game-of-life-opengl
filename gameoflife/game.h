@@ -77,11 +77,11 @@ public:
     }
 
     void addPattern(LifePattern lifePattern,
-        int posX, int posY)
+        size_t posX, size_t posY)
     {
-        for (int y = 0; y < lifePattern.height; y++)
+        for (size_t y = 0; y < lifePattern.height; y++)
         {
-            for (int x = 0; x < lifePattern.width; x++)
+            for (size_t x = 0; x < lifePattern.width; x++)
             {
                 if ((posX + x) < gridWidth && (posY + y) < gridHeight)
                 {
@@ -90,12 +90,12 @@ public:
             }
         }
     }
-    void addPattern(const GLubyte* pattern, int patternWidth, int patternHeight,
-        int posX, int posY)
+    void addPattern(const GLubyte* pattern, size_t patternWidth, size_t patternHeight,
+        size_t posX, size_t posY)
     {
-        for (int y = 0; y < patternHeight; y++)
+        for (size_t y = 0; y < patternHeight; y++)
         {
-            for (int x = 0; x < patternWidth; x++)
+            for (size_t x = 0; x < patternWidth; x++)
             {
                 if ((posX + x) < gridWidth && (posY + y) < gridHeight)
                 {

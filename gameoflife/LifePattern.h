@@ -3,11 +3,11 @@
 #pragma once
 struct LifePattern
 {
-	unsigned int width;
-	unsigned int height;
+	size_t width;
+	size_t height;
 	std::unique_ptr<char[]> body;
 
-	LifePattern(unsigned int width, unsigned int height, std::unique_ptr<char[]> body);
+	LifePattern(size_t width, size_t height, std::unique_ptr<char[]> body);
 	LifePattern(const LifePattern& other);
 
 	LifePattern(LifePattern&& other);
