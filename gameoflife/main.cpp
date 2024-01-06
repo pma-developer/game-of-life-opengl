@@ -184,7 +184,7 @@ int main()
 
 
     Game game = Game(2000, 2000);
-    game.addPattern(ri.get_pattern_from_url("https://copy.sh/life/examples/rats.rle"), game.gridWidth/2, game.gridHeight/2);
+    game.addPattern(ri.get_pattern_from_url("https://copy.sh/life/examples/LWSS-breeder.rle"), game.gridWidth/2, game.gridHeight/2);
     game.finishConfiguration();
     int fullscreenVAO = getFullscreenRectVAO();
 
