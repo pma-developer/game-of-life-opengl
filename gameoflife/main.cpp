@@ -7,11 +7,17 @@
 #include "Shader.h"
 #include "main.h"
 #include "game.h"
+#include <irrklang/irrKlang.h>
+using namespace irrklang;
+
+ISoundEngine* SoundEngine = createIrrKlangDevice();
+
+bool isVideoPlaying = false;
 
 GLFWwindow* window;
 
-int WINDOW_WIDTH = 1000;
-int WINDOW_HEIGHT = 1000;
+int WINDOW_WIDTH = 1280;
+int WINDOW_HEIGHT = 720;
 
 float zoomFactor = 1.2f;
 float zoomLevel = 1.0f;
@@ -51,6 +57,13 @@ void processKeyboardInput(GLFWwindow* window)
     {
         glfwSetWindowShouldClose(window, true);
     }
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
+    {
+        if (isVideoPlaying == false) {
+            SoundEngine->play2D("badapple.mp3", false);
+            isVideoPlaying = true;
+        }
+    }
 }
 
 
@@ -85,7 +98,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
         glm::vec2 screenCursorPos = cursorDelta;
 
         screenCursorPos.x = -(screenCursorPos.x / (WINDOW_WIDTH * zoomLevel));
-        screenCursorPos.y = screenCursorPos.y / (WINDOW_HEIGHT * zoomLevel);
+        screenCursorPos.y = -screenCursorPos.y / (WINDOW_HEIGHT * zoomLevel);
 
         cameraCenter += screenCursorPos;
     }
@@ -136,6 +149,7 @@ int initWindow()
     glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSwapInterval(1);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -176,6 +190,7 @@ int getFullscreenRectVAO()
 int main()
 {
 
+
     int success = initWindow();
     if (success == -1)
     {
@@ -183,20 +198,21 @@ int main()
     }
     RleImporter ri = RleImporter();
 
-    LifeRule lifeRule((size_t)2, (size_t)1, std::unique_ptr<int[]>(new int[2] { 3, 4 }), std::unique_ptr<int[]>(new int[1] { 3 }));
-    Game game = Game(2000, 2000, std::move(lifeRule));
-    game.addPattern(ri.get_pattern_from_url("https://copy.sh/life/examples/LWSS-breeder.rle"), game.gridWidth/2 - 900, game.gridHeight/2);
+    LifeRule lifeRule((size_t)2, (size_t)1, std::unique_ptr<int[]>(new int[2] { 2, 3 }), std::unique_ptr<int[]>(new int[1] { 3 }));
+    Game game = Game(1280, 720, std::move(lifeRule));
+    game.addPattern(ri.get_pattern_from_url("https://copy.sh/life/examples/LWSS-breeder.rle"), game.gridWidth/2 - 500, game.gridHeight/2);
     game.finishConfiguration();
     int fullscreenVAO = getFullscreenRectVAO();
 
     bool flip = false;
+
     while (!glfwWindowShouldClose(window))
     {
         processKeyboardInput(window);
         glClearColor(1, 0, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        game.iterateGame(zoomLevel, cameraCenter, fullscreenVAO);
+        game.iterateGame(zoomLevel, cameraCenter, fullscreenVAO, isVideoPlaying);
 
         GLenum err;
         while ((err = glGetError()) != GL_NO_ERROR) {

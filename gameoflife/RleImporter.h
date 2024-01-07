@@ -153,14 +153,6 @@ private:
         return true;
     }
 
-    void printAs2DArray(char* array, int width, int height) {
-        for (int i = 0; i < height; ++i) {
-            for (int j = 0; j < width; ++j) {
-                std::cout << array[i * width + j] << ' ';
-            }
-            std::cout << std::endl;
-        }
-    }
 
     static size_t
     mem_cb(void* contents, size_t size, size_t nmemb, void* userp)

@@ -6,8 +6,10 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 uniform sampler2D texture1;
+uniform sampler2D texture2;
 uniform float zoomLevel;
 uniform vec2 cameraCenter;
+uniform bool bwColor;
 
 void main()
 {
@@ -16,9 +18,8 @@ void main()
 
     vec2 sampleCoord;
     sampleCoord.x = mix(leftBottom.x, rightTop.x, TexCoord.x);
-    sampleCoord.y = mix(leftBottom.y, rightTop.y, TexCoord.y);
+    sampleCoord.y = mix(rightTop.y, leftBottom.y, TexCoord.y);
 
-
-    FragColor = texture(texture1, sampleCoord);
-    //FragColor = vec4(cameraCenter, 0, 1);
+    
+    FragColor = bwColor ? vec4(vec3(texture(texture1, sampleCoord).r), 1): texture(texture1, sampleCoord);
 }

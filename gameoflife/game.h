@@ -3,6 +3,10 @@
 #include <iostream>
 #include "Shader.h"
 #include "LifeData.h"
+#include <opencv2/opencv.hpp>
+
+using namespace std;
+using namespace cv;
 
 const static GLubyte glider[] = {
     0, 255, 0,
@@ -37,6 +41,9 @@ public:
     Shader computationShader;
     Shader displayShader;
 
+    VideoCapture vid_capture;
+
+    unsigned int videoFrameTexture;
     unsigned int gridDataTextures[2];
     unsigned int gridFBO;
 
@@ -62,11 +69,40 @@ public:
         delete[] grid;
     }
 
+    void printAs2DArray(GLubyte* array, size_t width, size_t height) {
+        for (int i = 0; i < height; ++i) {
+            for (int j = 0; j < width; ++j) {
+                std::cout << array[i * width + j] << ' ';
+            }
+            std::cout << std::endl;
+        }
+    }
     void finishConfiguration()
     {
+        vid_capture = VideoCapture("bad-apple60fps.mp4");
+        if (!vid_capture.isOpened())
+        {
+            std::cout << "error on video file open " << std::endl;
+        }
+
+        Mat frame;
+        bool isSuccess = vid_capture.read(frame);
+        if (isSuccess) {
+            uchar* arr = frame.isContinuous() ? frame.data : frame.clone().data;
+
+            size_t length = frame.total() * frame.channels();
+            size_t height = frame.rows;
+            size_t width = frame.cols;
+            videoFrameTexture = getInitedFrameTexture(width, height, arr);
+        }
+        else {
+            std::cout << "error while reading video!" << std::endl;
+        }
+
         initGridDataTexture();
         computationShader = Shader("./computation_shader.vert", "./computation_shader.frag", std::bind(&Game::injectCustomLifeRule, this, std::placeholders::_1));
         displayShader = Shader("./screen.vert", "./screen.frag");
+
         gridFBO = getGridFramebuffer(gridDataTextures[0]);
     }
 
@@ -144,7 +180,33 @@ public:
         }
     }
 
-    void setupTexture(unsigned int texture)
+    void setFrameTextureImage(unsigned int texture, size_t width, size_t height, GLubyte* data)
+    {
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    unsigned int getInitedFrameTexture(size_t width, size_t height, GLubyte* data)
+    {
+        unsigned int texture;
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        float borderColor[4] = { 1, 1, 1, 1 };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return texture;
+    }
+
+    void setupGridDataTexture(unsigned int texture)
     {
         glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -163,8 +225,8 @@ public:
     void initGridDataTexture()
     {
         glGenTextures(2, gridDataTextures);
-        setupTexture(gridDataTextures[0]);
-        setupTexture(gridDataTextures[1]);
+        setupGridDataTexture(gridDataTextures[0]);
+        setupGridDataTexture(gridDataTextures[1]);
     }
 
     unsigned int getGridFramebuffer(unsigned int texture)
@@ -184,7 +246,7 @@ public:
     }
 
 
-    void calculateNextGameState(unsigned int outputTexture, unsigned int inputTexture, int fullscreenVAO)
+    void calculateNextGameState(unsigned int outputTexture, unsigned int inputTexture, int fullscreenVAO, unsigned int frameTexture)
     {
         int size[4] = {};
         glGetIntegerv(GL_VIEWPORT, size);
@@ -197,11 +259,20 @@ public:
         computationShader.use();
         computationShader.setInt("GRID_HEIGHT", gridHeight);
         computationShader.setInt("GRID_WIDTH", gridWidth);
+        computationShader.setInt("computationTexture", 0);
+        computationShader.setInt("videoFrameTexture", 1);
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inputTexture);
 
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, frameTexture);
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindVertexArray(0);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -211,24 +282,47 @@ public:
 
     void displayGameGrid(float zoomLevel, glm::vec2 cameraCenter, unsigned int outputTexture, int fullscreenVAO)
     {
-        glBindVertexArray(fullscreenVAO);
         displayShader.use();
         displayShader.setFloat("zoomLevel", zoomLevel);
         displayShader.setVec2("cameraCenter", cameraCenter.x, cameraCenter.y);
+        displayShader.setInt("texture1", 0);
+        displayShader.setInt("texture2", 1);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, outputTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, videoFrameTexture);
 
+        glBindVertexArray(fullscreenVAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     }
 
-    void iterateGame(float zoomLevel, glm::vec2 cameraCenter, int fullscreenVAO)
+    void iterateGame(float zoomLevel, glm::vec2 cameraCenter, int fullscreenVAO, bool isVideoPlaying)
     {
+        if (isVideoPlaying == true) {
+            Mat frame;
+            bool isSuccess = vid_capture.read(frame);
+            if (isSuccess) {
+                Mat frameData = frame.clone();
+                GLubyte* arr = frameData.data;
+                size_t channels = frameData.channels();
+                size_t length = frameData.total();
+                size_t height = frameData.rows;
+                size_t width = frameData.cols;
+                setFrameTextureImage(videoFrameTexture, width, height, arr);
+            }
+
+            else {
+                std::cout << "error while reading video!" << std::endl;
+            }
+
+            displayShader.setBool("bwColor", true);
+        }
         unsigned int outputTexture = gridDataTextures[flip ? 0 : 1];
         unsigned int inputTexture = gridDataTextures[flip ? 1 : 0];
 
-        calculateNextGameState(outputTexture, inputTexture, fullscreenVAO);
+        calculateNextGameState(outputTexture, inputTexture, fullscreenVAO, videoFrameTexture);
         displayGameGrid(zoomLevel, cameraCenter, outputTexture, fullscreenVAO);
 
         flip = !flip;
