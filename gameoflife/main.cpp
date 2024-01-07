@@ -149,7 +149,7 @@ int initWindow()
     glfwSetCursorPosCallback(window, cursor_position_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetScrollCallback(window, scroll_callback);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -205,9 +205,12 @@ int main()
     int fullscreenVAO = getFullscreenRectVAO();
 
     bool flip = false;
+    const int targetFPS = 60;
+    const double targetFrameDuration = 1.0 / targetFPS;
 
     while (!glfwWindowShouldClose(window))
     {
+        auto frameStart = std::chrono::high_resolution_clock::now();
         processKeyboardInput(window);
         glClearColor(1, 0, 1, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -226,6 +229,15 @@ int main()
         cursorDelta = newCursorPos - oldCursorPos;
 
         glfwSwapBuffers(window);
+
+        while (true) {
+            auto now = std::chrono::high_resolution_clock::now();
+            double frameElapsedTime = std::chrono::duration<double>(now - frameStart).count();
+
+            if (frameElapsedTime >= targetFrameDuration) {
+                break;
+            }
+        }
     }
 
     glfwTerminate();
