@@ -30,7 +30,7 @@
     <ClCompile Include="rleImporter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LifePattern.cpp">
+    <ClCompile Include="LifeData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,7 +47,7 @@
     <ClInclude Include="RleImporter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LifePattern.h">
+    <ClInclude Include="LifeData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

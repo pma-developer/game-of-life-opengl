@@ -4,7 +4,8 @@
 #include <iostream> 
 #include <curl/curl.h>
 #include <regex>
-#include "LifePattern.h"
+#include "LifeData.h"
+#include <stack>
 
 #pragma once
 class RleImporter
@@ -148,6 +149,8 @@ private:
             lifePatternCellStates.erase(garbagePosition, garbage.length());
             garbagePosition = lifePatternCellStates.find(garbage);
         }
+
+        return true;
     }
 
     void printAs2DArray(char* array, int width, int height) {

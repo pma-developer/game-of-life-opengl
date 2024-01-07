@@ -2,7 +2,7 @@
 #include <glm/glm/glm.hpp>
 #include <iostream>
 #include "Shader.h"
-#include "LifePattern.h"
+#include "LifeData.h"
 
 const static GLubyte glider[] = {
     0, 255, 0,
@@ -40,14 +40,16 @@ public:
     unsigned int gridDataTextures[2];
     unsigned int gridFBO;
 
-    int gridWidth;
-    int gridHeight;
+    GLsizei gridWidth;
+    GLsizei gridHeight;
 
     GLubyte* grid;
 
+    LifeRule lifeRule;
+
     bool flip = false;
 
-	Game(int width, int height) : gridWidth(width), gridHeight(height)
+    Game(GLsizei width, GLsizei height, LifeRule lifeRule) : gridWidth(width), gridHeight(height), lifeRule(std::move(lifeRule))
 	{
         grid = new GLubyte[gridWidth * gridHeight];
 
@@ -63,14 +65,51 @@ public:
     void finishConfiguration()
     {
         initGridDataTexture();
-        computationShader = Shader("./computation_shader.vert", "./computation_shader.frag");
+        computationShader = Shader("./computation_shader.vert", "./computation_shader.frag", std::bind(&Game::injectCustomLifeRule, this, std::placeholders::_1));
         displayShader = Shader("./screen.vert", "./screen.frag");
         gridFBO = getGridFramebuffer(gridDataTextures[0]);
     }
 
+    std::string injectCustomLifeRule(std::string shaderSource)
+    {
+        const std::string defineLifeRuleName = "OVERRIDE_LIFE_RULE";
+        const std::string defineNeighborCountRuleName = "OVERRIDE_NEIGHBOR_COUNT_RULE";
+
+        size_t lifeIfndefPos = shaderSource.find("#ifndef " + defineLifeRuleName);
+        size_t neighborIfndefPos = shaderSource.find("#ifndef " + defineNeighborCountRuleName);
+
+        std::string liveCountVarName = "liveCount";
+        std::string resultLifeRuleMethod = "\n#define ";
+        resultLifeRuleMethod.append(defineLifeRuleName);
+        resultLifeRuleMethod.append("\n ");
+        resultLifeRuleMethod.append("vec4 getNextState(int liveCount, vec4 selfState){");
+        resultLifeRuleMethod.append("if(selfState.r == live.r){return ");
+        for (int i = 0; i < lifeRule.survivalRuleLength; i++) {
+            resultLifeRuleMethod.append(liveCountVarName + "==" + std::to_string(lifeRule.survivalRule[i]));
+            if (i + 1 != lifeRule.survivalRuleLength) {
+                resultLifeRuleMethod.append("||");
+            }
+        }
+        resultLifeRuleMethod.append("?live:dead;}");
+
+        resultLifeRuleMethod.append("else{return ");
+        for (int i = 0; i < lifeRule.birthRuleLength; i++) {
+            resultLifeRuleMethod.append(liveCountVarName + "==" + std::to_string(lifeRule.birthRule[i]));
+            if (i + 1 != lifeRule.birthRuleLength) {
+                resultLifeRuleMethod.append("||");
+            }
+        }
+        resultLifeRuleMethod.append("?live:dead;}");
+        resultLifeRuleMethod.append("}\n");
+
+        shaderSource.insert(lifeIfndefPos, resultLifeRuleMethod);
+
+        return shaderSource;
+    }
+
     void initializeGrid(GLubyte defaultValue = 0)
     {
-        for (int i = 0; i < gridWidth * gridHeight; ++i)
+        for (size_t i = 0; i < gridWidth * gridHeight; ++i)
         {
             grid[i] = defaultValue;
         }

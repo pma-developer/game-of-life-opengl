@@ -183,8 +183,8 @@ int main()
     }
     RleImporter ri = RleImporter();
 
-
-    Game game = Game(2000, 2000);
+    LifeRule lifeRule((size_t)2, (size_t)1, std::unique_ptr<int[]>(new int[2] { 3, 4 }), std::unique_ptr<int[]>(new int[1] { 3 }));
+    Game game = Game(2000, 2000, std::move(lifeRule));
     game.addPattern(ri.get_pattern_from_url("https://copy.sh/life/examples/LWSS-breeder.rle"), game.gridWidth/2 - 900, game.gridHeight/2);
     game.finishConfiguration();
     int fullscreenVAO = getFullscreenRectVAO();

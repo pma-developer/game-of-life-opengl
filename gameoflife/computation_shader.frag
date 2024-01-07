@@ -11,10 +11,9 @@ uniform sampler2D currentTexture;
 const vec4 live = vec4(1, 0, 0, 1);
 const vec4 dead = vec4(0, 0, 0, 1);
 
-void outputNextState()
+#ifndef OVERRIDE_NEIGHBOR_COUNT_RULE
+int countNeighbors(ivec2 selfCoord)
 {
-    ivec2 selfCoord = ivec2(gl_FragCoord.xy);
-    vec4 selfState = texelFetch(currentTexture, selfCoord, 0);
     int liveCount = 0;
 
     for(int y = -1; y <= 1; y++)
@@ -35,15 +34,31 @@ void outputNextState()
             }
         }
     }
+    return liveCount;
+}
+#endif
 
+#ifndef OVERRIDE_LIFE_RULE
+vec4 getNextState(int liveCount, vec4 selfState)
+{
     if(selfState.r == live.r)
     {
-        FragColor = (liveCount == 2 || liveCount == 3) ? live : dead;
+        return liveCount == 2 || liveCount == 3 ? live : dead;
     }
     else
     {
-        FragColor = (liveCount == 3) ? live : dead;
+        return liveCount == 3 ? live : dead;
     }
+}
+#endif
+
+void outputNextState()
+{
+    ivec2 selfCoord = ivec2(gl_FragCoord.xy);
+    vec4 selfState = texelFetch(currentTexture, selfCoord, 0);
+    int liveCount = countNeighbors(selfCoord);
+
+    FragColor = getNextState(liveCount, selfState);
 }
 
 void main()

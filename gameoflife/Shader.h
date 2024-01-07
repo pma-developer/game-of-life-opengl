@@ -25,6 +25,18 @@ public:
 
 	}
 
+	Shader(std::string vShaderPath, std::string fShaderPath, std::function<std::string(std::string)> fShaderPreprocessor)
+	{
+		this->vShaderPath = vShaderPath;
+		this->fShaderPath = fShaderPath;
+
+		std::string vSource;
+		std::string fSource;
+		getShaderSourcesFromPaths(vSource, fSource, vShaderPath, fShaderPath);
+		
+		programID = getShaderProgramFromSources(vSource, fShaderPreprocessor(fSource));
+	}
+
 	unsigned int getShaderProgram()
 	{
 		std::string vSource;
