@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include <glm/glm/glm.hpp>
+#include <glm/glm.hpp>
 #include <iostream>
 #include "Shader.h"
 #include "LifeData.h"

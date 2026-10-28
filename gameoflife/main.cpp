@@ -1,6 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm/glm.hpp>
+#include <glm/glm.hpp>
 #include <curl/curl.h>
 #include "RleImporter.h"
 #include <iostream>
