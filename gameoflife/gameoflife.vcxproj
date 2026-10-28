@@ -18,6 +18,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\game.cpp" />
+    <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\LifeData.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\rleImporter.cpp" />
+    <ClCompile Include="src\Shader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\game.h" />
+    <ClInclude Include="include\LifeData.h" />
+    <ClInclude Include="include\main.h" />
+    <ClInclude Include="include\RleImporter.h" />
+    <ClInclude Include="include\Shader.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -138,27 +153,6 @@
       <AdditionalDependencies>irrKlang.lib;opencv_world490.lib;glfw3.lib;opengl32.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="glad.c" />
-    <ClCompile Include="LifeData.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="rleImporter.cpp" />
-    <ClCompile Include="Shader.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="game.h" />
-    <ClInclude Include="LifeData.h" />
-    <ClInclude Include="main.h" />
-    <ClInclude Include="RleImporter.h" />
-    <ClInclude Include="Shader.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="computation_shader.vert" />
-    <None Include="computation_shader.frag" />
-    <None Include="screen.frag" />
-    <None Include="screen.vert" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

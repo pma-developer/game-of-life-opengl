@@ -60,7 +60,7 @@ void processKeyboardInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS)
     {
         if (isVideoPlaying == false) {
-            SoundEngine->play2D("badapple.mp3", false);
+            SoundEngine->play2D("resources/badapple.mp3", false);
             isVideoPlaying = true;
         }
     }

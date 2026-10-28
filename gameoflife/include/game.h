@@ -79,7 +79,7 @@ public:
     }
     void finishConfiguration()
     {
-        vid_capture = VideoCapture("bad-apple60fps.mp4");
+        vid_capture = VideoCapture("resources/bad-apple60fps.mp4");
         if (!vid_capture.isOpened())
         {
             std::cout << "error on video file open " << std::endl;
@@ -100,8 +100,8 @@ public:
         }
 
         initGridDataTexture();
-        computationShader = Shader("./computation_shader.vert", "./computation_shader.frag", std::bind(&Game::injectCustomLifeRule, this, std::placeholders::_1));
-        displayShader = Shader("./screen.vert", "./screen.frag");
+        computationShader = Shader("shaders/computation_shader.vert", "shaders/computation_shader.frag", std::bind(&Game::injectCustomLifeRule, this, std::placeholders::_1));
+        displayShader = Shader("shaders/screen.vert", "shaders/screen.frag");
 
         gridFBO = getGridFramebuffer(gridDataTextures[0]);
     }
